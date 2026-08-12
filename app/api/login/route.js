@@ -1,0 +1,46 @@
+import { NextResponse } from "next/server";
+import { supabaseServer } from "../../../lib/supabaseServer";
+import { signSession } from "../../../lib/session";
+
+export async function POST(req) {
+  const { kod } = await req.json();
+  if (!kod || typeof kod !== "string") {
+    return NextResponse.json({ error: "Kod gerekli." }, { status: 400 });
+  }
+
+  const supabase = supabaseServer();
+  const { data, error } = await supabase
+    .from("erisim_kodlari")
+    .select("*")
+    .eq("kod", kod.trim())
+    .eq("aktif", true)
+    .maybeSingle();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Kod hatalı veya pasif." }, { status: 401 });
+  }
+
+  await supabase
+    .from("erisim_kodlari")
+    .update({ son_giris: new Date().toISOString() })
+    .eq("id", data.id);
+
+  const token = await signSession(
+    {
+      sahip_adi: data.sahip_adi,
+      yetki: data.yetki,
+      exp: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 gün
+    },
+    process.env.SESSION_SECRET
+  );
+
+  const res = NextResponse.json({ ok: true, yetki: data.yetki, sahip_adi: data.sahip_adi });
+  res.cookies.set("yt_session", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  return res;
+}

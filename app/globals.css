@@ -1,0 +1,179 @@
+/* ============================================================
+   Tasarım Tokenleri — Yavuztürk Süleymaniye marka paletinden
+   ============================================================ */
+:root {
+  --lacivert: #28334a;      /* PANTONE 2380C - ana marka rengi */
+  --lacivert-koyu: #1c2436;
+  --yesil: #28724f;         /* PANTONE 555C - onay / geldi */
+  --gri: #d9d9d6;           /* Cool Gray 1C */
+  --gri-acik: #f4f4f3;
+  --kirmizi: #b3413b;       /* izinsiz için, palet dışı ama uyumlu */
+  --amber: #c98a2c;         /* izinli için */
+  --beyaz: #ffffff;
+  --metin: #202634;
+  --metin-soluk: #6b7280;
+  --border: #e4e4e1;
+  --radius: 14px;
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --shadow: 0 1px 2px rgba(28,36,54,0.04), 0 8px 24px rgba(28,36,54,0.06);
+}
+
+* { box-sizing: border-box; }
+html, body { padding: 0; margin: 0; }
+body {
+  font-family: var(--font-body);
+  color: var(--metin);
+  background: var(--gri-acik);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01em; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+
+/* ---------- Marka şeridi motifi (logo çizgilerinden) ----------
+   Logodaki dalgalı yatay çizgi bloklarını, sayfa üstünde ince bir
+   marka imzası olarak kullanıyoruz: yükleniyor çubuğu ve ayraçlarda. */
+.serit {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--yesil) 0px, var(--yesil) 28px,
+    transparent 28px, transparent 36px
+  );
+  border-radius: 4px;
+  opacity: 0.9;
+}
+
+/* ---------- Layout kabuğu ---------- */
+.kabuk { min-height: 100vh; display: flex; }
+.yan-menu {
+  width: 240px;
+  background: var(--lacivert);
+  color: var(--beyaz);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.yan-menu .logo-alan { padding: 24px 20px 16px; }
+.yan-menu .logo-alan img { width: 100%; height: auto; filter: brightness(0) invert(1); opacity: 0.95; }
+.yan-menu nav { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; flex: 1; }
+.yan-menu nav a {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: rgba(255,255,255,0.75);
+  display: flex; align-items: center; gap: 10px;
+}
+.yan-menu nav a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.yan-menu nav a.aktif { background: var(--yesil); color: #fff; }
+.yan-menu .alt-bilgi { padding: 16px 20px; font-size: 12.5px; color: rgba(255,255,255,0.5); border-top: 1px solid rgba(255,255,255,0.1); }
+.yan-menu .cikis-btn {
+  margin: 8px 12px 16px; padding: 10px 14px; border-radius: 10px;
+  background: rgba(255,255,255,0.08); color: #fff; border: none; font-weight: 600; font-size: 13.5px;
+  text-align: left;
+}
+.yan-menu .cikis-btn:hover { background: rgba(255,255,255,0.15); }
+
+.icerik { flex: 1; min-width: 0; }
+.ust-bar {
+  display: none;
+}
+.sayfa { padding: 32px 36px 60px; max-width: 1100px; }
+.sayfa-baslik { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 8px; }
+.sayfa-baslik h1 { font-size: 24px; font-weight: 700; color: var(--lacivert); }
+.sayfa-alt { color: var(--metin-soluk); font-size: 14.5px; margin: 6px 0 26px; }
+
+/* ---------- Mobil: alt gezinme çubuğuna dönüşen menü ---------- */
+@media (max-width: 860px) {
+  .kabuk { flex-direction: column; }
+  .yan-menu { width: 100%; height: auto; position: sticky; top: 0; z-index: 30; flex-direction: row; align-items: center; padding: 0; }
+  .yan-menu .logo-alan { padding: 10px 14px; width: 120px; }
+  .yan-menu .alt-bilgi { display: none; }
+  .yan-menu nav { flex-direction: row; padding: 0; flex: 1; overflow-x: auto; }
+  .yan-menu nav a { white-space: nowrap; font-size: 13px; padding: 10px 12px; }
+  .yan-menu .cikis-btn { margin: 0 10px; padding: 8px 10px; font-size: 12px; }
+  .sayfa { padding: 20px 16px 90px; }
+}
+
+/* ---------- Kartlar / bileşenler ---------- */
+.kart {
+  background: var(--beyaz);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.kart-ic { padding: 22px 24px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 18px; border-radius: 10px; border: 1px solid transparent;
+  font-weight: 600; font-size: 14.5px; transition: transform .05s ease, opacity .15s ease;
+}
+.btn:active { transform: scale(0.98); }
+.btn-lacivert { background: var(--lacivert); color: #fff; }
+.btn-lacivert:hover { opacity: 0.92; }
+.btn-yesil { background: var(--yesil); color: #fff; }
+.btn-yesil:hover { opacity: 0.92; }
+.btn-hayalet { background: transparent; color: var(--lacivert); border-color: var(--border); }
+.btn-hayalet:hover { background: var(--gri-acik); }
+.btn-tehlike { background: #fff; color: var(--kirmizi); border-color: var(--kirmizi); }
+.btn-tehlike:hover { background: #fdf2f1; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 8px; }
+.btn-blok { width: 100%; }
+
+.girdi, select.girdi, textarea.girdi {
+  width: 100%; padding: 11px 13px; border-radius: 10px; border: 1.5px solid var(--border);
+  font-size: 15px; color: var(--metin); background: #fff;
+}
+.girdi:focus, select.girdi:focus, textarea.girdi:focus { outline: 2px solid var(--yesil); outline-offset: 1px; border-color: var(--yesil); }
+.etiket { font-size: 13px; font-weight: 600; color: var(--metin-soluk); display: block; margin-bottom: 6px; }
+
+.rozet { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 12.5px; font-weight: 700; }
+.rozet-yesil { background: #e7f3ee; color: var(--yesil); }
+.rozet-kirmizi { background: #fbeceb; color: var(--kirmizi); }
+.rozet-amber { background: #faf1e2; color: var(--amber); }
+.rozet-gri { background: var(--gri-acik); color: var(--metin-soluk); }
+
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--metin-soluk); padding: 10px 14px; border-bottom: 1.5px solid var(--border); }
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14.5px; }
+tr:last-child td { border-bottom: none; }
+
+.grup-sekme { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.grup-sekme button {
+  padding: 9px 18px; border-radius: 100px; border: 1.5px solid var(--border); background: #fff;
+  font-weight: 700; font-size: 14px; color: var(--metin-soluk);
+}
+.grup-sekme button.aktif { background: var(--lacivert); border-color: var(--lacivert); color: #fff; }
+
+.ogrenci-satir { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap; }
+.ogrenci-satir:last-child { border-bottom: none; }
+.ogrenci-ad { font-weight: 600; font-size: 15px; }
+.ogrenci-detay { font-size: 13px; color: var(--metin-soluk); margin-top: 2px; }
+.durum-btn-grup { display: flex; gap: 8px; }
+.durum-btn {
+  padding: 9px 16px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff;
+  font-weight: 700; font-size: 13.5px; color: var(--metin-soluk); display: flex; align-items: center; gap: 6px;
+}
+.durum-btn.secili-geldi { background: var(--yesil); border-color: var(--yesil); color: #fff; }
+.durum-btn.secili-izinli { background: var(--amber); border-color: var(--amber); color: #fff; }
+.durum-btn.secili-izinsiz { background: var(--kirmizi); border-color: var(--kirmizi); color: #fff; }
+
+.login-sarma { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--lacivert); padding: 20px; }
+.login-kart { width: 100%; max-width: 380px; background: #fff; border-radius: 20px; padding: 40px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+.login-kart img { width: 180px; margin: 0 auto 24px; display: block; }
+
+.istatistik-cubuk-sarma { width: 100%; height: 10px; background: var(--gri-acik); border-radius: 100px; overflow: hidden; }
+.istatistik-cubuk { height: 100%; background: var(--yesil); }
+
+.uyari { background: #faf1e2; border: 1px solid #f0d9ad; color: #7a5416; padding: 12px 16px; border-radius: 10px; font-size: 13.5px; }
+.hata { background: #fbeceb; border: 1px solid #f0bcb9; color: var(--kirmizi); padding: 12px 16px; border-radius: 10px; font-size: 13.5px; }
+
+.bos-durum { text-align: center; padding: 60px 20px; color: var(--metin-soluk); }
