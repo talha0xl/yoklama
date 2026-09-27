@@ -139,6 +139,20 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
     setSebepAcikId(null);
   }
 
+  async function turSil(t) {
+    if (!confirm(`"${t.isim}" türünü kaldırmak istediğinize emin misiniz? Bu türle daha önce alınmış yoklama kayıtları silinmez, sadece bu tür seçim listesinden kalkar.`)) return;
+    const res = await fetch(`/api/yoklama-turleri/${t.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      alert("Kaldırılamadı, tekrar deneyin.");
+      return;
+    }
+    setTurler((liste) => {
+      const kalan = liste.filter((x) => x.id !== t.id);
+      if (turId === t.id) setTurId(kalan[0]?.id || null);
+      return kalan;
+    });
+  }
+
   async function yeniTurEkle(e) {
     e.preventDefault();
     if (!yeniTurAdi.trim()) return;
@@ -183,9 +197,31 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
       <label className="etiket" style={{ marginBottom: 6, display: "block" }}>Yoklama türü</label>
       <div className="grup-sekme">
         {turler.map((t) => (
-          <button key={t.id} className={turId === t.id ? "aktif" : ""} onClick={() => setTurId(t.id)}>
-            {t.isim}
-          </button>
+          <div key={t.id} style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+            <button className={turId === t.id ? "aktif" : ""} onClick={() => setTurId(t.id)}>
+              {t.isim}
+            </button>
+            {isAdmin && turler.length > 1 && (
+              <button
+                type="button"
+                title={`"${t.isim}" türünü kaldır`}
+                onClick={() => turSil(t)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--metin-soluk)",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  padding: "0 2px",
+                  lineHeight: 1,
+                  borderRadius: 0,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
         ))}
         {isAdmin && !yeniTurAcik && (
           <button className="btn-hayalet-sekme" onClick={() => setYeniTurAcik(true)}>
