@@ -1,36 +1,29 @@
 import { cookies } from "next/headers";
 import { verifySession } from "../lib/session";
-import CikisButonu from "./CikisButonu";
+import { MODULLER, modulErisimVarMi, istatistikErisimVarMi, mesajErisimVarMi } from "../lib/moduller";
+import KabukNav from "./KabukNav";
 
-const MENU = [
-  { href: "/yoklama", etiket: "Yoklama", yalnizYonetici: false },
-  { href: "/istatistik", etiket: "İstatistik", yalnizYonetici: false },
-  { href: "/mesaj", etiket: "Veli Bilgilendirme", yalnizYonetici: false },
-  { href: "/admin", etiket: "Yönetim", yalnizYonetici: true },
-];
-
-export default async function Kabuk({ aktif, children }) {
+// Kabuk artık kök layout'ta BİR KEZ render ediliyor (sayfa geçişlerinde yeniden
+// yüklenmiyor, kaybolup gelmiyor). Aktif menü öğesi KabukNav içinde (client,
+// usePathname ile) belirleniyor, böylece sayfa değişince sadece içerik alanı
+// değişiyor, kenar menü sabit kalıyor — geçişler çok daha hızlı hissettiriyor.
+export default async function Kabuk({ children }) {
   const token = cookies().get("yt_session")?.value;
   const session = token ? await verifySession(token, process.env.SESSION_SECRET) : null;
 
+  const modulLinkleri = MODULLER.filter(
+    (m) => (m.hazir || session?.admin) && modulErisimVarMi(session, m.anahtar)
+  ).map((m) => ({ href: m.yol, etiket: m.isim, altYazi: m.hazir ? null : "yapım aşamasında" }));
+
   return (
     <div className="kabuk">
-      <aside className="yan-menu">
-        <div className="logo-alan">
-          <img src="/logo.png" alt="Yavuztürk Süleymaniye" />
-        </div>
-        <nav>
-          {MENU.filter((m) => !m.yalnizYonetici || session?.yetki === "yonetici").map((m) => (
-            <a key={m.href} href={m.href} className={aktif === m.href ? "aktif" : ""}>
-              {m.etiket}
-            </a>
-          ))}
-        </nav>
-        <CikisButonu />
-        <div className="alt-bilgi">
-          {session?.sahip_adi ? <>Giriş: {session.sahip_adi}</> : null}
-        </div>
-      </aside>
+      <KabukNav
+        modulLinkleri={modulLinkleri}
+        istatistikVarMi={istatistikErisimVarMi(session)}
+        mesajVarMi={mesajErisimVarMi(session)}
+        isAdmin={!!session?.admin}
+        sahipAdi={session?.sahip_adi || null}
+      />
       <div className="icerik">
         <div className="sayfa">{children}</div>
       </div>

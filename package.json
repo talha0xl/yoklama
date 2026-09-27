@@ -1,5 +1,5 @@
 {
-  "name": "yurt-yoklama",
+  "name": "yavuzturk-suleymaniye-portal",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
+    "exceljs": "^4.4.0",
     "next": "14.2.35",
+    "pdfkit": "^0.20.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }

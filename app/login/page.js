@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSiteAyarlari } from "../../components/SiteAyarlariProvider";
 
 export default function GirisSayfasi() {
   return (
@@ -11,6 +12,7 @@ export default function GirisSayfasi() {
 }
 
 function GirisFormu() {
+  const { siteAdi, logoUrl } = useSiteAyarlari();
   const [kod, setKod] = useState("");
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState("");
@@ -33,7 +35,7 @@ function GirisFormu() {
         setYukleniyor(false);
         return;
       }
-      const hedef = params.get("next") || (data.yetki === "yonetici" ? "/yoklama" : "/yoklama");
+      const hedef = params.get("next") || "/";
       router.push(hedef);
       router.refresh();
     } catch {
@@ -45,10 +47,10 @@ function GirisFormu() {
   return (
     <div className="login-sarma">
       <div className="login-kart">
-        <img src="/logo.png" alt="Yavuztürk Süleymaniye" />
+        <img src={logoUrl || "/logo.png"} alt={siteAdi} />
         <div className="serit" style={{ marginBottom: 24 }} />
         <h1 style={{ fontSize: 19, textAlign: "center", color: "var(--lacivert)", marginBottom: 6 }}>
-          Yoklama Sistemi
+          {siteAdi} Portalı
         </h1>
         <p style={{ textAlign: "center", color: "var(--metin-soluk)", fontSize: 14, marginBottom: 26 }}>
           Size verilen erişim kodunu girin

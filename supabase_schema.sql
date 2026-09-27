@@ -31,7 +31,7 @@ create table if not exists yoklama (
   tarih date not null default current_date,
   durum text not null check (durum in ('geldi', 'izinli', 'izinsiz')),
   saat time not null default current_time,
-  not text,
+  not_metni text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (ogrenci_id, tarih)
