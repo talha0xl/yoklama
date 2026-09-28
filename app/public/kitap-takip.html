@@ -187,8 +187,19 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 /* ============================================================ */
 
 const CONFIGURED = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
+// "sb" (hoca/talebe/kitap gibi korumalı tablolar) sadece erişim kodu
+// girildikten SONRA oluşturulur — her istekte bir "x-kt-anahtar" başlığı
+// taşır ve veritabanı tarafında bu başlık kontrol edilir (bkz. aşağıdaki
+// kurulum notları). "sbPublic" ise sadece site_ayarlari gibi herkese açık,
+// salt okunur tablolar için — erişim kodu beklemeden, sayfa açılır açılmaz
+// kullanılabilir (marka/logo burada gösterilsin diye).
 let sb = null;
-if (CONFIGURED) sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sbPublic = null;
+if (CONFIGURED) sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const KT_ANAHTAR_DEPO = "kt_erisim_kodu";
+function sbOlustur(kod) {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { "x-kt-anahtar": kod } } });
+}
 
 const EMPTY_DATA = { teachers: [], students: [], books: [], logs: [], library: [], publishers: [] };
 let data = structuredClone(EMPTY_DATA);
@@ -220,8 +231,12 @@ function mapLog(r) { return { id: r.id, bookId: r.book_id, date: r.date, page: r
 function mapLibraryBook(r) { return { id: r.id, name: r.name, totalPages: r.total_pages, publisherId: r.publisher_id || null }; }
 function mapPublisher(r) { return { id: r.id, name: r.name }; }
 
-async function load() {
-  if (!CONFIGURED) { ready = true; render(); return; }
+// dogrulamaModu=true: erişim kodu az önce girildi, önce sessizce
+// doğrulanıyor — ekrana hiçbir şey basmadan sadece başarılı olup olmadığını
+// döndürür (kod yanlışsa tekrar kapı gösterilecek).
+async function load(dogrulamaModu) {
+  if (!CONFIGURED) { ready = true; render(); return true; }
+  if (!sb) { erisimKapisiniGoster(); return false; }
   try {
     const [t, s, b, l, lib, pub] = await Promise.all([
       sb.from("teachers").select("*"),
@@ -245,11 +260,15 @@ async function load() {
     data.publishers = pub.data.map(mapPublisher).sort((a, b) => a.name.localeCompare(b.name, "tr"));
     lastSync = new Date();
   } catch (e) {
-    showToast("Veri okunamadı: " + (e.message || e));
+    if (!dogrulamaModu) showToast("Veri okunamadı: " + (e.message || e));
+    return false;
   }
-  ready = true;
-  render();
-  hideSplash();
+  if (!dogrulamaModu) {
+    ready = true;
+    render();
+    hideSplash();
+  }
+  return true;
 }
 
 function hideSplash() {
@@ -1030,6 +1049,9 @@ function renderTeachers() {
       <button class="btn-primary" id="add-teacher-btn">${ic.plus} Hoca Ekle</button>
     </div>
     ${data.teachers.length === 0 ? emptyHtml(ic.users, "Henüz hoca eklenmedi. Yukarıdan ilk hocayı ekleyin.") : rows}
+    <div style="text-align:center;margin-top:22px;">
+      <button id="kt-kod-sifirla-link" type="button" style="background:none;border:none;color:var(--ink-soft);font-size:12.5px;text-decoration:underline;cursor:pointer;">Erişim kodunu değiştir</button>
+    </div>
   `;
 }
 
@@ -1656,6 +1678,8 @@ function bindEvents() {
 
   const exportBtn = document.getElementById("export-csv-btn");
   if (exportBtn) exportBtn.addEventListener("click", exportExcel);
+  const kodSifirlaLink = document.getElementById("kt-kod-sifirla-link");
+  if (kodSifirlaLink) kodSifirlaLink.addEventListener("click", kodSifirla);
   const exportClassBtn = document.getElementById("export-class-btn");
   if (exportClassBtn) exportClassBtn.addEventListener("click", () => exportTeacherExcel(exportClassBtn.getAttribute("data-teacher")));
   const exportStudentBtn = document.getElementById("export-student-btn");
@@ -1846,7 +1870,7 @@ if (splashImg && window.__LOGO_WHITE__) splashImg.src = window.__LOGO_WHITE__;
 (async function siteAyarlariniUygula() {
   try {
     if (!CONFIGURED) return;
-    const { data } = await sb.from("site_ayarlari").select("*").eq("site", "kitap_takip").maybeSingle();
+    const { data } = await sbPublic.from("site_ayarlari").select("*").eq("site", "kitap_takip").maybeSingle();
     if (!data) return;
     if (data.logo_url && splashImg) splashImg.src = data.logo_url;
     if (data.site_adi) {
@@ -1863,7 +1887,111 @@ if (splashImg && window.__LOGO_WHITE__) splashImg.src = window.__LOGO_WHITE__;
   }
 })();
 
-load();
+// ------------------------------------------------------------------
+// Erişim kodu kapısı: teachers/students/books/logs/book_library/
+// publishers tabloları artık veritabanı tarafında bir gizli koda göre
+// korunuyor (bkz. supabase_schema... dosyasındaki RLS notları). Bu kod
+// hiçbir zaman bu HTML dosyasının içinde yazmaz — sadece hocanın/yöneticinin
+// tarayıcısında (localStorage) saklanır. Kod bilinmeden ne okuma ne de
+// yazma yapılabilir; SUPABASE_ANON_KEY tek başına artık yeterli değildir.
+// ------------------------------------------------------------------
+function erisimKapisiniGoster(hataliMi) {
+  const splash = document.getElementById("splash");
+  if (splash) splash.remove();
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;">
+      <div style="max-width:360px;width:100%;background:var(--card);border:1px solid var(--paper-line);border-radius:16px;padding:28px 24px;text-align:center;box-sizing:border-box;">
+        <div style="font-weight:800;font-size:18px;color:var(--ink);margin-bottom:6px;">Erişim Kodu</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:18px;">Devam etmek için portala girişte kullandığınız erişim kodunu girin — ayrı bir kod değil, aynısı.</div>
+        ${hataliMi ? '<div style="color:#B3413B;font-size:13px;margin-bottom:10px;font-weight:600;">Kod yanlış görünüyor, tekrar deneyin.</div>' : ""}
+        <input id="kt-kod-input" type="password" autocomplete="off" placeholder="Erişim kodu"
+          style="width:100%;box-sizing:border-box;padding:11px 13px;border-radius:10px;border:1.5px solid var(--paper-line);font-size:15px;margin-bottom:12px;" />
+        <button id="kt-kod-gonder" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--ribbon);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;">Devam Et</button>
+      </div>
+    </div>`;
+  const girdi = document.getElementById("kt-kod-input");
+  const dugme = document.getElementById("kt-kod-gonder");
+  girdi.focus();
+  async function gonder() {
+    const deger = girdi.value.trim();
+    if (!deger) return;
+    dugme.disabled = true;
+    dugme.textContent = "Kontrol ediliyor...";
+    sbOlustur(deger);
+    const basarili = await load(true);
+    if (!basarili || data.teachers.length === 0) {
+      sb = null;
+      erisimKapisiniGoster(true);
+      return;
+    }
+    try { localStorage.setItem(KT_ANAHTAR_DEPO, deger); } catch (e) {}
+    ready = true;
+    render();
+    hideSplash();
+  }
+  dugme.addEventListener("click", gonder);
+  girdi.addEventListener("keydown", (e) => { if (e.key === "Enter") gonder(); });
+}
+
+function kodSifirla() {
+  try { localStorage.removeItem(KT_ANAHTAR_DEPO); } catch (e) {}
+  sb = null;
+  erisimKapisiniGoster(false);
+}
+
+// Kişi ana portala (Yoklama'ya vs.) zaten giriş yapmışsa, o oturumun
+// çerezi (yt_session) buradan JS ile okunamaz (httpOnly) ama aynı
+// siteden bir istekle sunucuya sorulabilir — sunucu oturumu doğrulayıp
+// kişinin giriş kodunu geri döndürüyor. Böylece Kitap Takip'e HİÇ kod
+// sormadan otomatik girilmiş oluyor. Bu başarısız olursa (oturum yok,
+// modül izni yok, eski bir çerez vb.) sessizce tarayıcıda daha önce
+// saklanmış koda, o da yoksa elle kod sormaya düşer.
+async function otomatikKodDene() {
+  try {
+    const res = await fetch("/api/kitap-takip-anahtar", { credentials: "same-origin" });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d && d.kod ? d.kod : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function baslat() {
+  if (!CONFIGURED) { load(); return; }
+
+  const otomatikKod = await otomatikKodDene();
+  if (otomatikKod) {
+    // Bu kod, kullanıcının yazdığı rastgele bir metin değil — sunucunun
+    // (yt_session çerezini doğrulayarak) bize geri verdiği, zaten doğru
+    // olduğu KANITLANMIŞ bir kod. Bu yüzden "hoca listesi boşsa yanlış
+    // kod say" sezgisini burada uygulamıyoruz (elle giriş kapısında
+    // uyguluyoruz) — sadece istek gerçekten başarısız olduysa (ağ hatası,
+    // RLS reddi vb.) elle kapıya düşüyoruz.
+    sbOlustur(otomatikKod);
+    const basarili = await load(true);
+    if (basarili) {
+      try { localStorage.setItem(KT_ANAHTAR_DEPO, otomatikKod); } catch (e) {}
+      ready = true;
+      render();
+      hideSplash();
+      return;
+    }
+    sb = null;
+  }
+
+  let kod = null;
+  try { kod = localStorage.getItem(KT_ANAHTAR_DEPO); } catch (e) {}
+  if (kod) {
+    sbOlustur(kod);
+    load();
+  } else {
+    erisimKapisiniGoster(false);
+  }
+}
+
+baslat();
 </script>
 </body>
 </html>

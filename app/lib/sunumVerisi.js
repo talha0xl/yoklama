@@ -28,9 +28,9 @@ async function vazifelerGetir(supabase, tarih) {
 // Sunum Modu için: bugünün toplam öğrenci/yoklama/vazife özeti.
 // grupId verilirse sadece o grup, verilmezse tüm öğrenciler ("Toplu Talebe").
 // turId verilirse sadece o yoklama türü, verilmezse günün tüm türleri birlikte.
-export async function sunumVerisiGetir(session, { grupId, turId } = {}) {
+export async function sunumVerisiGetir(session, { grupId, turId, tarih: secilenTarih } = {}) {
   const supabase = supabaseServer();
-  const tarih = sunucuTarihiISO();
+  const tarih = secilenTarih || sunucuTarihiISO();
 
   let ogrQ = supabase.from("ogrenciler").select("id", { count: "exact" }).eq("aktif", true);
   if (grupId) ogrQ = ogrQ.eq("grup_id", grupId);
