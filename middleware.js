@@ -52,6 +52,14 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
+  // Öğrenci profili hem Yoklama hem Namaz Yoklama verisini gösteriyor —
+  // bu modüllerden birine erişimi olan herkes görebilsin.
+  if (pathname.startsWith("/ogrenci") && !mesajErisimVarMi(session)) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
   // Modül bazlı erişim kontrolü: bir modülün korunan yoluna, o modüle
   // izni olmayan (ve admin olmayan) bir kod giremesin.
   const modul = yolIcinModul(pathname);
