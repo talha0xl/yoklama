@@ -37,7 +37,10 @@ export async function POST(req) {
   const body = await req.json();
   const supabase = supabaseServer();
   const now = new Date();
-  const saat = sunucuSaatiISO(now); // sunucu UTC'de çalışsa da Türkiye saatiyle kaydeder
+  // Tarayıcı kendi (kullanıcının gördüğü) saatini gönderiyorsa onu kullan;
+  // göndermediyse sunucu UTC'de çalışsa da Türkiye saatiyle hesapla.
+  const gelenSaat = typeof body.saat === "string" && /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(body.saat) ? body.saat : null;
+  const saat = gelenSaat || sunucuSaatiISO(now);
 
   const { data, error } = await supabase
     .from("yoklama")
