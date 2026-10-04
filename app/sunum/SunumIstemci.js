@@ -6,6 +6,7 @@ import { useSiteAyarlari } from "../../components/SiteAyarlariProvider";
 const GUNLER = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 const AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const YENILEME_MS = 15 * 1000; // 15 saniye
+const KATEGORI_BASLIK = { geldi: "Gelenler", izinli: "İzinliler", izinsiz: "İzinsizler" };
 
 function saatFormatla(d) {
   return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
@@ -37,6 +38,11 @@ export default function SunumIstemci({ ilkVeri }) {
   const gercekBugun = ilkVeri.tarih || "";
   const ilkTurAyarlandi = useRef(false);
 
+  // "İncele" paneli: hangi kategori (geldi/izinli/izinsiz) açık, ve o
+  // kategorideki hangi isme basıldı (sebebi/saati göstermek için).
+  const [acikKategori, setAcikKategori] = useState(null);
+  const [acikIsimIndex, setAcikIsimIndex] = useState(null);
+
   useEffect(() => {
     fetch("/api/gruplar").then((r) => r.json()).then((d) => setGruplar(d.gruplar || []));
     fetch("/api/yoklama-turleri").then((r) => r.json()).then((d) => {
@@ -65,6 +71,18 @@ export default function SunumIstemci({ ilkVeri }) {
   useEffect(() => {
     yenile();
   }, [yenile]);
+
+  // Seçim değişince açık "incele" panelini kapat — eski grubun listesi
+  // yeni grubun kartının altında kalmasın.
+  useEffect(() => {
+    setAcikKategori(null);
+    setAcikIsimIndex(null);
+  }, [grupId, turId, tarih]);
+
+  function inceleAc(kategori) {
+    setAcikIsimIndex(null);
+    setAcikKategori((mevcut) => (mevcut === kategori ? null : kategori));
+  }
 
   useEffect(() => {
     setSaat(new Date());
@@ -115,12 +133,21 @@ export default function SunumIstemci({ ilkVeri }) {
       <div className="sunum-secim-cubugu">
         <div className="sunum-secim-alan">
           <label>Grup</label>
-          <select value={grupId} onChange={(e) => setGrupId(e.target.value)}>
-            <option value="">Toplu Talebe</option>
+          <div className="sunum-grup-dugmeler">
+            <button type="button" className={`sunum-grup-dugme ${!grupId ? "aktif" : ""}`} onClick={() => setGrupId("")}>
+              Toplu Talebe
+            </button>
             {gruplar.map((g) => (
-              <option key={g.id} value={g.id}>{g.isim}</option>
+              <button
+                type="button"
+                key={g.id}
+                className={`sunum-grup-dugme ${grupId === g.id ? "aktif" : ""}`}
+                onClick={() => setGrupId(g.id)}
+              >
+                {g.isim}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
         <div className="sunum-secim-alan">
           <label>Yoklama Türü</label>
@@ -153,19 +180,64 @@ export default function SunumIstemci({ ilkVeri }) {
           <div className="sunum-kart">
             <div className="sunum-kart-sayi" style={{ color: "#7fd9a8" }}>{veri.yoklama.geldi}</div>
             <div className="sunum-kart-etiket">Geldi</div>
+            {veri.yoklama.geldi > 0 && (
+              <button type="button" className="sunum-kart-incele" onClick={() => inceleAc("geldi")}>
+                {acikKategori === "geldi" ? "Kapat" : "İncele"}
+              </button>
+            )}
           </div>
           <div className="sunum-kart">
             <div className="sunum-kart-sayi" style={{ color: "#e3b972" }}>{veri.yoklama.izinli}</div>
             <div className="sunum-kart-etiket">İzinli</div>
+            {veri.yoklama.izinli > 0 && (
+              <button type="button" className="sunum-kart-incele" onClick={() => inceleAc("izinli")}>
+                {acikKategori === "izinli" ? "Kapat" : "İncele"}
+              </button>
+            )}
           </div>
           <div className="sunum-kart">
             <div className="sunum-kart-sayi" style={{ color: "#e0776f" }}>{veri.yoklama.izinsiz}</div>
             <div className="sunum-kart-etiket">İzinsiz</div>
+            {veri.yoklama.izinsiz > 0 && (
+              <button type="button" className="sunum-kart-incele" onClick={() => inceleAc("izinsiz")}>
+                {acikKategori === "izinsiz" ? "Kapat" : "İncele"}
+              </button>
+            )}
           </div>
           {yoklamaOran !== null && (
             <div className="sunum-kart">
               <div className="sunum-kart-sayi">%{yoklamaOran}</div>
               <div className="sunum-kart-etiket">Devam Oranı</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {acikKategori && veri.yoklama?.isimler?.[acikKategori] && (
+        <div className="sunum-incele-panel">
+          <div className="sunum-incele-baslik">{KATEGORI_BASLIK[acikKategori]} ({veri.yoklama.isimler[acikKategori].length})</div>
+          {veri.yoklama.isimler[acikKategori].length === 0 ? (
+            <div className="sunum-incele-bos">Kimse yok.</div>
+          ) : (
+            <div className="sunum-incele-liste">
+              {veri.yoklama.isimler[acikKategori].map((k, i) => (
+                <div key={i}>
+                  <button type="button" className="sunum-incele-isim" onClick={() => setAcikIsimIndex((mevcut) => (mevcut === i ? null : i))}>
+                    {k.ad_soyad}
+                  </button>
+                  {acikIsimIndex === i && (
+                    <div className="sunum-incele-sebep">
+                      {acikKategori === "geldi"
+                        ? k.saat
+                          ? `Saat ${k.saat.slice(0, 5)}'te geldi işaretlendi.`
+                          : "Saat bilgisi yok."
+                        : k.not_metni
+                        ? `Sebep: ${k.not_metni}`
+                        : "Sebep belirtilmemiş."}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

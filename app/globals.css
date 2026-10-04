@@ -451,3 +451,34 @@ tr.sirdaki-satir td:first-child { padding-left: 11px; }
   cursor: pointer; color-scheme: dark;
 }
 .sunum-secim-alan input[type="date"]:focus { outline: 2px solid rgba(255,255,255,0.4); }
+.sunum-grup-dugmeler { display: flex; flex-wrap: wrap; gap: 6px; max-width: min(70vw, 560px); }
+.sunum-grup-dugme {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff;
+  border-radius: 100px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-body);
+}
+.sunum-grup-dugme:hover { background: rgba(255,255,255,0.16); }
+.sunum-grup-dugme.aktif { background: #fff; color: var(--lacivert-koyu); border-color: #fff; }
+.sunum-kart-incele {
+  display: inline-block; margin-top: 10px; background: none; border: none;
+  color: rgba(255,255,255,0.55); font-size: 12.5px; font-weight: 700; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; font-family: var(--font-body);
+}
+.sunum-kart-incele:hover { color: #fff; }
+.sunum-incele-panel {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px;
+  padding: clamp(14px, 1.8vw, 22px) clamp(18px, 2.2vw, 28px); margin-top: clamp(10px, 1.4vh, 16px);
+}
+.sunum-incele-baslik {
+  font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.55); margin-bottom: 10px;
+}
+.sunum-incele-liste { display: flex; flex-direction: column; }
+.sunum-incele-isim {
+  display: block; width: 100%; text-align: left; background: none; border: none; color: #fff;
+  font-size: 15px; font-weight: 600; padding: 6px 0; cursor: pointer; font-family: var(--font-body);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sunum-incele-isim:hover { color: rgba(255,255,255,0.75); }
+.sunum-incele-sebep { font-size: 13px; color: rgba(255,255,255,0.55); padding: 2px 0 8px 2px; }
+.sunum-incele-bos { font-size: 14px; color: rgba(255,255,255,0.45); }

@@ -249,6 +249,22 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
     });
   }
 
+  async function turAdiniDuzenle(t) {
+    const yeniAd = prompt("Yeni ad:", t.isim);
+    if (!yeniAd || !yeniAd.trim() || yeniAd.trim() === t.isim) return;
+    const res = await fetch(`/api/yoklama-turleri/${t.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isim: yeniAd.trim() }),
+    });
+    if (!res.ok) {
+      alert("Ad değiştirilemedi, tekrar deneyin.");
+      return;
+    }
+    const d = await res.json();
+    setTurler((liste) => liste.map((x) => (x.id === t.id ? d.tur : x)));
+  }
+
   async function yeniTurEkle(e) {
     e.preventDefault();
     if (!yeniTurAdi.trim()) return;
@@ -298,6 +314,25 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
             <button className={turId === t.id ? "aktif" : ""} onClick={() => setTurId(t.id)}>
               {t.isim}
             </button>
+            {isAdmin && (
+              <button
+                type="button"
+                title={`"${t.isim}" adını değiştir`}
+                onClick={() => turAdiniDuzenle(t)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--metin-soluk)",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  padding: "0 2px",
+                  lineHeight: 1,
+                  borderRadius: 0,
+                }}
+              >
+                ✎
+              </button>
+            )}
             {isAdmin && turler.length > 1 && (
               <button
                 type="button"

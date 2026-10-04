@@ -685,6 +685,21 @@ function GruplarPaneli() {
     getir();
   }
 
+  async function grupAdiniDuzenle(g) {
+    const yeniAd = prompt("Yeni ad:", g.isim);
+    if (!yeniAd || !yeniAd.trim() || yeniAd.trim() === g.isim) return;
+    const res = await fetch("/api/gruplar", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: g.id, isim: yeniAd.trim() }),
+    });
+    if (!res.ok) {
+      alert("Ad değiştirilemedi, tekrar deneyin.");
+      return;
+    }
+    getir();
+  }
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 20 }}>
       <div className="kart">
@@ -704,6 +719,9 @@ function GruplarPaneli() {
                 <div style={{ display: "flex", gap: 8 }}>
                   <button className={`btn btn-sm ${g.veli_bilgilendirme_aktif ? "btn-tehlike" : "btn-yesil"}`} onClick={() => bilgilendirmeyiDegistir(g)}>
                     {g.veli_bilgilendirme_aktif ? "Mesajı kapat" : "Mesajı aç"}
+                  </button>
+                  <button className="btn btn-sm" onClick={() => grupAdiniDuzenle(g)}>
+                    Adını değiştir
                   </button>
                   <button className="btn btn-tehlike btn-sm" onClick={() => grupSil(g)}>
                     Kaldır
@@ -727,6 +745,99 @@ function GruplarPaneli() {
             </button>
           </form>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function otoYedekTarihFormatla(iso) {
+  const d = new Date(iso);
+  const gun = String(d.getDate()).padStart(2, "0");
+  const ay = String(d.getMonth() + 1).padStart(2, "0");
+  const saat = String(d.getHours()).padStart(2, "0");
+  const dk = String(d.getMinutes()).padStart(2, "0");
+  return `${gun}.${ay}.${d.getFullYear()} ${saat}:${dk}`;
+}
+
+function OtomatikYedekPaneli() {
+  const [ayar, setAyar] = useState(null);
+  const [yedekler, setYedekler] = useState([]);
+  const [yukleniyor, setYukleniyor] = useState(true);
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+
+  const getir = useCallback(() => {
+    setYukleniyor(true);
+    Promise.all([
+      fetch("/api/yedek-ayarlari").then((r) => r.json()),
+      fetch("/api/yedekler").then((r) => r.json()),
+    ]).then(([a, y]) => {
+      setAyar(a.ayar || null);
+      setYedekler(y.yedekler || []);
+      setYukleniyor(false);
+    });
+  }, []);
+
+  useEffect(() => getir(), [getir]);
+
+  async function sikligiDegistir(yeni) {
+    if (!yeni || yeni === ayar?.siklik) return;
+    setKaydediliyor(true);
+    const res = await fetch("/api/yedek-ayarlari", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ siklik: yeni }),
+    });
+    const d = await res.json();
+    if (res.ok) setAyar(d.ayar);
+    setKaydediliyor(false);
+  }
+
+  return (
+    <div className="kart" style={{ marginBottom: 20 }}>
+      <div className="kart-ic">
+        <h3 style={{ fontSize: 16, marginBottom: 10 }}>Otomatik yedekleme</h3>
+        <p style={{ fontSize: 13.5, color: "var(--metin-soluk)", marginBottom: 16 }}>
+          Seçtiğiniz sıklıkta sistem kendiliğinden bir yedek alıp burada saklar — elle indirmeyi unutsanız bile son
+          birkaç yedek hazır durur. En fazla son 12 otomatik yedek tutulur, daha eskiler otomatik silinir.
+        </p>
+
+        {yukleniyor && <div className="bos-durum" style={{ padding: "10px 0" }}>Yükleniyor...</div>}
+
+        {!yukleniyor && (
+          <>
+            <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+              <button
+                className={`btn btn-sm ${ayar?.siklik === "haftalik" ? "btn-lacivert" : "btn-hayalet"}`}
+                disabled={kaydediliyor}
+                onClick={() => sikligiDegistir("haftalik")}
+              >
+                Haftalık
+              </button>
+              <button
+                className={`btn btn-sm ${ayar?.siklik === "aylik" ? "btn-lacivert" : "btn-hayalet"}`}
+                disabled={kaydediliyor}
+                onClick={() => sikligiDegistir("aylik")}
+              >
+                Aylık
+              </button>
+            </div>
+
+            <h4 style={{ fontSize: 13.5, marginBottom: 8, color: "var(--metin-soluk)" }}>Geçmiş otomatik yedekler</h4>
+            {yedekler.length === 0 && (
+              <div className="bos-durum" style={{ padding: "12px 0", fontSize: 13 }}>
+                Henüz otomatik yedek alınmadı — ilk yedek en geç yarın alınır.
+              </div>
+            )}
+            {yedekler.map((y) => (
+              <div className="ogrenci-satir" key={y.id}>
+                <div className="ogrenci-ad">{otoYedekTarihFormatla(y.olusturma_tarihi)}</div>
+                <a href={`/api/yedekler/${y.id}`} download className="btn btn-hayalet btn-sm">
+                  İndir
+                </a>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -777,6 +888,8 @@ function YedeklePaneli() {
           </a>
         </div>
       </div>
+
+      <OtomatikYedekPaneli />
 
       <div className="kart" style={{ marginBottom: 20 }}>
         <div className="kart-ic">

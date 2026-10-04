@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { verifySession } from "../../../lib/session";
 import { supabaseServer } from "../../../lib/supabaseServer";
 import { sunucuSaatiISO } from "../../../lib/zaman";
 
@@ -58,8 +60,10 @@ export async function POST(req) {
   return NextResponse.json({ kayit: data });
 }
 
-// DELETE /api/yoklama?ogrenci_id=...&tarih=...&tur_id=...  (tek öğrencinin işaretini geri al)
+// DELETE /api/yoklama?ogrenci_id=...&tarih=...&tur_id=...  (tek öğrencinin işaretini geri al — "Sıfırla")
 // DELETE /api/yoklama  body: { tarih, tur_id, ogrenci_ids: [...] }  (o günün o türdeki tüm işaretlerini topluca sil)
+// Not: tek tek "Sıfırla" yoklamaya erişebilen herkese açık; günün tamamını
+// topluca silmek ise daha riskli bir işlem olduğu için admin'e kısıtlı kalıyor.
 export async function DELETE(req) {
   const ogrenciId = req.nextUrl.searchParams.get("ogrenci_id");
   const supabase = supabaseServer();
@@ -77,7 +81,14 @@ export async function DELETE(req) {
     return NextResponse.json({ ok: true });
   }
 
-  // Toplu silme: gövdede tarih/tur_id/ogrenci_ids bekleniyor.
+  // Toplu silme (günün tüm işaretlerini silme) — sadece admin.
+  const token = cookies().get("yt_session")?.value;
+  const session = token ? await verifySession(token, process.env.SESSION_SECRET) : null;
+  if (!session?.admin) {
+    return NextResponse.json({ error: "Bu işlem sadece yöneticiler içindir" }, { status: 403 });
+  }
+
+  // Gövdede tarih/tur_id/ogrenci_ids bekleniyor.
   const body = await req.json().catch(() => null);
   const tarih = body?.tarih;
   const turId = body?.tur_id;
