@@ -138,14 +138,20 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
     const oncekiKayit = kayitMap[ogrenciId];
     const notDegeri = durum === "izinli" || durum === "izinsiz" ? (notMetni ?? oncekiKayit?.not_metni ?? null) : null;
 
+    // Saati kullanıcının kendi cihazından alıyoruz: ekranda gördüğü saatle
+    // birebir aynı olsun, sunucunun saat dilimine bağlı kalmasın.
+    const simdi = new Date();
+    const yerelSaat =
+      String(simdi.getHours()).padStart(2, "0") + ":" + String(simdi.getMinutes()).padStart(2, "0") + ":" + String(simdi.getSeconds()).padStart(2, "0");
+
     beklemedekiler.current.add(ogrenciId);
-    setKayitMap((m) => ({ ...m, [ogrenciId]: { ...(m[ogrenciId] || {}), durum, not_metni: notDegeri } }));
+    setKayitMap((m) => ({ ...m, [ogrenciId]: { ...(m[ogrenciId] || {}), durum, not_metni: notDegeri, saat: yerelSaat } }));
 
     try {
       const res = await fetch("/api/yoklama", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ogrenci_id: ogrenciId, tarih, tur_id: turId, durum, not_metni: notDegeri }),
+        body: JSON.stringify({ ogrenci_id: ogrenciId, tarih, tur_id: turId, durum, not_metni: notDegeri, saat: yerelSaat }),
       });
       const d = await res.json();
       if (d.kayit) setKayitMap((m) => ({ ...m, [ogrenciId]: d.kayit }));
