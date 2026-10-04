@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useAraliklaTazele } from "../../../lib/useAraliklaTazele";
 
 const TUMU = "__tumu__";
@@ -205,6 +206,36 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
     setSebepAcikId(null);
   }
 
+  // Ekranda görünen listede HENÜZ işaretlenmemiş olanların hepsini tek
+  // tuşla "geldi" yapar. İzinli/izinsiz/geldi olarak zaten işaretlenmiş
+  // kimseye dokunmaz; sonra sadece gelmeyenleri tek tek düzeltmek yeter.
+  const [topluGeldiYapiliyor, setTopluGeldiYapiliyor] = useState(false);
+  async function isaretsizleriGeldiYap() {
+    const hedefler = ogrenciler.filter((o) => !kayitMap[o.id]?.durum);
+    if (!hedefler.length) return;
+    const turAdi = turler.find((t) => t.id === turId)?.isim || "";
+    const grupAdi = grupId === TUMU ? "Tüm Talebe" : gruplar.find((g) => g.id === grupId)?.isim || "";
+    if (!confirm(`"${turAdi}" (${grupAdi}) yoklamasında işaretsiz ${hedefler.length} öğrenci "Geldi" olarak işaretlenecek. Zaten işaretlenmiş olanlara dokunulmaz. Onaylıyor musunuz?`)) return;
+    const simdi = new Date();
+    const yerelSaat =
+      String(simdi.getHours()).padStart(2, "0") + ":" + String(simdi.getMinutes()).padStart(2, "0") + ":" + String(simdi.getSeconds()).padStart(2, "0");
+    setTopluGeldiYapiliyor(true);
+    try {
+      const res = await fetch("/api/yoklama/toplu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tarih, tur_id: turId, durum: "geldi", ogrenci_ids: hedefler.map((o) => o.id), saat: yerelSaat }),
+      });
+      if (!res.ok) throw new Error("kaydedilemedi");
+      veriGetir(true);
+    } catch (err) {
+      setKayitHata("Toplu işaretleme yapılamadı, tekrar deneyin.");
+      setTimeout(() => setKayitHata(""), 8000);
+    } finally {
+      setTopluGeldiYapiliyor(false);
+    }
+  }
+
   // Ekranda görünen listeye göre (seçili tarih + tür + grup/"Tüm Talebe")
   // o günkü TÜM işaretlemeleri topluca siler — tek tek "Sıfırla"ya basmaya
   // gerek kalmadan yanlış girilen bir günü baştan almak için.
@@ -404,11 +435,22 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
           <span className="rozet rozet-amber">{izinliSayisi} izinli</span>
           <span className="rozet rozet-kirmizi">{izinsizSayisi} izinsiz</span>
           <span className="rozet rozet-gri">{isaretsizSayisi} işaretsiz</span>
+          {isaretsizSayisi > 0 && (
+            <button
+              type="button"
+              className="btn btn-yesil btn-sm"
+              style={{ marginLeft: "auto" }}
+              disabled={topluGeldiYapiliyor}
+              onClick={isaretsizleriGeldiYap}
+            >
+              {topluGeldiYapiliyor ? "İşaretleniyor..." : `İşaretsiz ${isaretsizSayisi} kişiyi Geldi yap`}
+            </button>
+          )}
           {isAdmin && gelenSayisi + izinliSayisi + izinsizSayisi > 0 && (
             <button
               type="button"
               className="btn btn-hayalet btn-sm"
-              style={{ color: "var(--kirmizi, #c0392b)", marginLeft: "auto" }}
+              style={{ color: "var(--kirmizi, #c0392b)", marginLeft: isaretsizSayisi > 0 ? 0 : "auto" }}
               disabled={topluSiliniyor}
               onClick={gununYoklamasiniSil}
             >
@@ -434,7 +476,9 @@ export default function YoklamaIstemci({ isAdmin, baslangicTurler, baslangicGrup
                   <div className="ogrenci-satir" style={sebepAcik || ((durum === "izinli" || durum === "izinsiz") && kayit?.not_metni) ? { borderBottom: "none" } : undefined}>
                     <div>
                       <div className="ogrenci-ad">
-                        {o.ad_soyad}
+                        <Link href={`/ogrenci/${o.id}`} className="ogrenci-ad-link" title="Öğrenci profilini aç">
+                          {o.ad_soyad}
+                        </Link>
                         {grupId === TUMU && (
                           <span className="rozet rozet-gri" style={{ marginLeft: 8, fontWeight: 600, fontSize: 11 }}>
                             {gruplar.find((g) => g.id === o.grup_id)?.isim || "Grupsuz"}
