@@ -482,3 +482,17 @@ tr.sirdaki-satir td:first-child { padding-left: 11px; }
 .sunum-incele-isim:hover { color: rgba(255,255,255,0.75); }
 .sunum-incele-sebep { font-size: 13px; color: rgba(255,255,255,0.55); padding: 2px 0 8px 2px; }
 .sunum-incele-bos { font-size: 14px; color: rgba(255,255,255,0.45); }
+
+/* Öğrenci profil sayfası */
+.profil-izgara { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 16px; align-items: start; }
+.profil-baslik { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--baslik); }
+.profil-satir { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--cizgi, rgba(128,128,128,0.18)); font-size: 14px; }
+.profil-satir:last-child { border-bottom: none; }
+.profil-stat-izgara { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 12px; }
+.profil-stat { text-align: center; }
+.profil-stat-sayi { font-family: var(--font-display); font-size: 30px; font-weight: 800; line-height: 1.1; }
+.profil-stat-etiket { font-size: 12px; font-weight: 600; color: var(--metin-soluk); margin-top: 2px; }
+.profil-kayit { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--cizgi, rgba(128,128,128,0.18)); }
+.profil-kayit:last-child { border-bottom: none; }
+.ogrenci-ad-link { color: inherit; text-decoration: none; }
+.ogrenci-ad-link:hover { text-decoration: underline; text-underline-offset: 3px; }
