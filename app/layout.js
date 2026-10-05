@@ -1,5 +1,6 @@
 import "./globals.css";
 import AcilisEkrani from "../components/AcilisEkrani";
+import SwKaydi from "../components/SwKaydi";
 import { SiteAyarlariProvider } from "../components/SiteAyarlariProvider";
 import { siteAyarlariGetir, koyulastir } from "../lib/siteAyarlari";
 
@@ -13,6 +14,8 @@ export async function generateMetadata() {
   return {
     title: `${ayar.siteAdi} | Portal`,
     description: "Yurt yoklama, namaz yoklama, kitap takip ve görev listeleri — tek portal.",
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: ayar.siteAdi, statusBarStyle: "default" },
   };
 }
 
@@ -51,6 +54,7 @@ export default async function RootLayout({ children }) {
         />
       </head>
       <body>
+        <SwKaydi />
         <SiteAyarlariProvider value={{ siteAdi: ayar.siteAdi, logoUrl: ayar.logoUrl }}>
           <AcilisEkrani>{children}</AcilisEkrani>
         </SiteAyarlariProvider>
