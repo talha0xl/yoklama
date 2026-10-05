@@ -41,6 +41,9 @@ export default function KabukNav({ modulLinkleri, istatistikVarMi, mesajVarMi, i
             Veli Bilgilendirme
           </Link>
         )}
+        <Link href="/duyurular" className={yol === "/duyurular" ? "aktif" : ""}>
+          Duyurular
+        </Link>
         {isAdmin && (
           <Link href="/admin" className={yol === "/admin" ? "aktif" : ""}>
             Yönetim
