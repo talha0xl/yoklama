@@ -11,6 +11,8 @@ export async function middleware(req) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/logo.png") ||
     pathname.startsWith("/icon") ||
+    pathname.startsWith("/sw.js") ||
+    pathname.startsWith("/manifest.webmanifest") ||
     pathname.startsWith("/apple-icon")
   ) {
     return NextResponse.next();
