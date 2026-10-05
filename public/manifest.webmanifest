@@ -1,0 +1,14 @@
+{
+  "name": "Yavuztürk Süleymaniye Portalı",
+  "short_name": "Yavuztürk",
+  "description": "Yoklama, namaz, görev listeleri, kitap takip ve duyurular.",
+  "lang": "tr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#28334a",
+  "theme_color": "#28334a",
+  "icons": [
+    { "src": "/icon.png", "sizes": "192x192 512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
